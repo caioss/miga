@@ -1,2 +1,1 @@
-class MIGA:
-    pass
+from .miga import MIGA
