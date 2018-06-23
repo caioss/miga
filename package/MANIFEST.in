@@ -1,0 +1,13 @@
+global-include *.pyx
+global-include *.pxd
+global-include *.c
+global-include *.cpp
+global-include *.h
+global-include *.hpp
+graft third-party
+#recursive-include third-party *
+#include README INSTALL CHANGELOG LICENSE AUTHORS SUMMARY.txt
+include setup.py
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
