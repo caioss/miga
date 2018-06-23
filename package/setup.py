@@ -34,21 +34,21 @@ use_cython = get_cython()
 cython_c_suffix = ".pyx" if use_cython else ".c"
 cython_cpp_suffix = ".pyx" if use_cython else ".cpp"
 
-extensions = [
-    Extension(
-        "ga.CPUPopulation",
-        ["coevolution/ga/CPUPopulation" + cython_cpp_suffix, "coevolution/ga/src/CPUPopulation.cpp"],
-        language = "c++",
-        include_dirs = [],
-        libraries = [],
-        extra_compile_args = ["-O3", "-Wall", "-pedantic", "-std=c++11", "-fopenmp", "-march=native"],
-        extra_link_args=["-std=c++11", "-fopenmp"]
-    ),
-]
+# extensions = [
+#     Extension(
+#         "ga.CPUPopulation",
+#         ["coevolution/ga/CPUPopulation" + cython_cpp_suffix, "coevolution/ga/src/CPUPopulation.cpp"],
+#         language = "c++",
+#         include_dirs = [],
+#         libraries = [],
+#         extra_compile_args = ["-O3", "-Wall", "-pedantic", "-std=c++11", "-fopenmp", "-march=native"],
+#         extra_link_args=["-std=c++11", "-fopenmp"]
+#     ),
+# ]
 
-if use_cython:
-    from Cython.Build import cythonize
-    extensions = cythonize(extensions, gdb_debug=False)
+# if use_cython:
+#     from Cython.Build import cythonize
+#     extensions = cythonize(extensions, gdb_debug=False)
 
 setup(
     name = "miga",
@@ -76,6 +76,6 @@ setup(
     packages = find_packages(),
     package_dir = {"miga": "miga"},
     ext_package = "miga",
-    ext_modules = extensions,
+    # ext_modules = extensions,
     install_requires = ["numpy", "biopython"],
 )
