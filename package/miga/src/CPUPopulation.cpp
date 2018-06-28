@@ -2,9 +2,12 @@
 #include <algorithm>
 #include <cmath>
 
+#include <iostream>
+
 data_t CPUPopulation:: singleFitness(const seq_t index) const {
     data_t coupling { 0 };
     uint32_t *pairCount { new uint32_t[_q * _q] };
+    const seq_t *genome { _genome + index * _numSeqs };
 
     const data_t residual { _lambda / (_lambda * _q * _q + _numSeqs * _q * _q) };
 
@@ -14,7 +17,7 @@ data_t CPUPopulation:: singleFitness(const seq_t index) const {
 
             for (size_t column = 0; column < _numSeqs; ++column) {
                 const seq_t aa1 { _seqA[lineA * _numSeqs + column] };
-                const seq_t aa2 { _seqB[lineB * _numSeqs + column] };
+                const seq_t aa2 { _seqB[lineB * _numSeqs + genome[column]] };
                 ++pairCount[aa1 * _q + aa2];
             }
 
@@ -28,6 +31,8 @@ data_t CPUPopulation:: singleFitness(const seq_t index) const {
                     coupling += pairProb * log(pairProb / (aa1Prob * aa2Prob));
                 }
             }
+        }
+    }
 
     return coupling;
 }
