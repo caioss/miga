@@ -1,12 +1,12 @@
 #ifndef POPULATION_HPP
 #define POPULATION_HPP
 
+#include "types.h"
 #include <string>
 
 class Population {
 public:
-// TODO
-// Population();
+    virtual data_t singleFitness(const seq_t index) const = 0;
 
 };
 
