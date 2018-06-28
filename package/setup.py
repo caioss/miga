@@ -37,9 +37,9 @@ cython_cpp_suffix = ".pyx" if use_cython else ".cpp"
 extensions = [
     Extension(
         "miga",
-        ["miga/miga" + cython_cpp_suffix, "miga/src/Population.cpp"],
+        ["miga/miga" + cython_cpp_suffix, "miga/src/Population.cpp", "miga/src/CPUPopulation.cpp"],
         language = "c++",
-        include_dirs = [],
+        include_dirs = ["miga/src"],
         libraries = [],
         extra_compile_args = ["-O3", "-Wall", "-pedantic", "-std=c++11", "-fopenmp", "-march=native"],
         extra_link_args=["-std=c++11", "-fopenmp"]
