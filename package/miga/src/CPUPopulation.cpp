@@ -4,7 +4,15 @@
 
 #include <iostream>
 
-data_t CPUPopulation:: singleFitness(const seq_t index) const {
+void CPUPopulation::setQ(const seq_t value) {
+    _q = value;
+}
+
+void CPUPopulation::setLambda(const data_t value) {
+    _lambda = value;
+}
+
+data_t CPUPopulation::computeSingleFitness(const seq_t index) const {
     data_t coupling { 0 };
     uint32_t *pairCount { new uint32_t[_q * _q] };
     const seq_t *genome { _genome + index * _numSeqs };

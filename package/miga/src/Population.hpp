@@ -6,8 +6,9 @@
 
 class Population {
 public:
+    virtual void setQ(const seq_t value) = 0;
+    virtual void setLambda(const data_t value) = 0;
     virtual std::string platform() const = 0;
-    virtual data_t singleFitness(const seq_t index) const = 0;
 
 };
 

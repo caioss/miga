@@ -5,8 +5,12 @@
 
 class CPUPopulation : public Population {
 public:
+    void setQ(const seq_t value);
+    void setLambda(const data_t value);
     std::string platform() const { return "CPU"; };
-    data_t singleFitness(const seq_t index) const;
+
+private:
+    data_t computeSingleFitness(const seq_t index) const;
 
 private:
     seq_t _q;
