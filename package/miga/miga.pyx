@@ -1,6 +1,10 @@
-from types cimport *
-from Population cimport Population, make_population
+from miga.types cimport *
+from miga.Population cimport Population, make_population
 import multiprocessing
+import numpy as np
+
+np_seq_t = np.uint32
+np_data_t = np.double
 
 cdef class MIGA:
     cdef:
@@ -9,15 +13,22 @@ cdef class MIGA:
         data_t _lambda
         bool _minimize
         size_t _threads
-        size_t _pop_size
         double _mutation
         double _elite
         double _death
+        object _genome
+        object _fitness
+        object _seq_a
+        object _seq_b
 
     def __cinit__(self):
         self._population = make_population("CPU")
 
     def __init__(self):
+        self.__clear_population()
+        self._seq_a = np.empty((0, 0), np_seq_t, "C")
+        self._seq_b = np.empty((0, 0), np_seq_t, "C")
+
         self.pop_size = 20
         self.mutation = 0.01
         self.elite = 0.1
@@ -78,15 +89,61 @@ cdef class MIGA:
         self._elite = value
 
     @property
+    def genome(self):
+        return self._genome.copy()
+
+    @genome.setter
+    def genome(self, value):
+        self._genome[:] = value
+
+    @property
     def pop_size(self):
-        return self._pop_size
+        return self._genome.shape[0]
 
     @pop_size.setter
     def pop_size(self, value):
         if value < 1:
             raise ValueError("There must be at least one individual")
 
-        self._pop_size = value
+        if value != self.pop_size:
+            self.__resize(value)
+
+    def set_msa(self, seq_a, seq_b):
+        if seq_a.shape[0] != seq_b.shape[0]:
+            raise ValueError("Number of sequences must be equal on both alignments")
+
+        if seq_a.min() < 0 or seq_a.max() >= self.q:
+            raise ValueError("Invalid values in seq_a")
+
+        if seq_b.min() < 0 or seq_b.max() >= self.q:
+            raise ValueError("Invalid values in seq_b")
+
+        self._seq_a = np.require(
+            seq_a.T.copy(),
+            np_seq_t,
+            ("C", "W", "O")
+        )
+        self._seq_b = np.require(
+            seq_b.T.copy(),
+            np_seq_t,
+            ("C", "W", "O")
+        )
+
+        pop_size = self.pop_size
+        self.__clear_population()
+        self.pop_size = pop_size
+
+    @property
+    def seq_a(self):
+        return self._seq_a.T.copy()
+
+    @property
+    def seq_b(self):
+        return self._seq_b.T.copy()
+
+    @property
+    def fitness(self):
+        return self._fitness.copy()
 
     @property
     def minimize(self):
@@ -131,16 +188,47 @@ cdef class MIGA:
 
         self._population = new_population
 
-    @property
-    def fitness(self):
-        # TODO
-        pass
+    def __resize(self, new_size):
+        old_size = self._genome.shape[0]
+        old_genome = self._genome
+        old_fitness = self._fitness
+        num_seqs = self._seq_a.shape[1] # Transposed!
+        index = min(new_size, old_size)
+
+        new_genome = np.require(
+            np.empty((new_size, num_seqs), np_seq_t, "C"),
+            np_seq_t,
+            ("C", "W", "O")
+        )
+
+        new_fitness = np.require(
+            np.zeros(new_size, np_seq_t, "C"),
+            np_data_t,
+            ("C", "W", "O")
+        )
+
+        if old_size != 0:
+            # Copy back old genomes and fitness
+            new_genome[:index, :] = old_genome[:index, :]
+            new_fitness[:index] = old_fitness[:index]
+
+        # Apply shuffled genomes to new individuals
+        sample_genome = np.arange(num_seqs, dtype=np_seq_t)
+        for i in range(index, new_size):
+            np.random.shuffle(sample_genome)
+            new_genome[i, :] = sample_genome
+
+        self._genome = new_genome
+        self._fitness = new_fitness
+
+    def __clear_population(self):
+        self._genome = np.empty((0, 0), np_seq_t, "C")
+        self._fitness = np.empty((0, 0), np_seq_t, "C")
 
     def __update_parameters(self):
         self._population.setQ(self._q)
         self._population.setLambda(self._lambda)
         # TODO
-        # self._population.setPopulationSize(self._pop_size)
         # self._population.setThreads(self._threads)
 
     def run(self, size_t generations):
@@ -151,8 +239,9 @@ cdef class MIGA:
         # self._population.sort(self._minimize)
 
         # Groups sizes
-        cdef size_t elite = int(self._elite * self._pop_size)
-        cdef size_t surv_num = int(self.pop_size - self._death * self.pop_size)
+        cdef size_t pop_size = self.pop_size
+        cdef size_t elite = int(self._elite * pop_size)
+        cdef size_t surv_num = int(pop_size - self._death * self.pop_size)
         cdef size_t rep_num = self.pop_size - surv_num
         
         # Initiating simulation loop
@@ -161,7 +250,7 @@ cdef class MIGA:
 # TODO
 
             # Selection and reproduction
-            # self._population.kill_and_reproduce(surv_num, self._pop_size, 0, surv_num, self._mutation)
+            # self._population.kill_and_reproduce(surv_num, pop_size, 0, surv_num, self._mutation)
 
             # Mutate non-elite members
             # self._population.mutate(self._mutation, self._elite, surv_num)
