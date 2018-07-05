@@ -3,8 +3,13 @@ from types cimport *
 
 cdef extern from "src/Population.hpp":
     cdef cppclass Population:
-        void setQ(const seq_t value)
-        void setLambda(const data_t value);
-        string platform();
+        string platform()
+        void set_q(const seq_t value)
+        void set_lambda(const data_t value)
+        void set_threads(const size_t threads)
+        void set_msa(const size_t num_seqs, seq_t *seq_a, const size_t ic_a, seq_t *seq_b, const size_t ic_b)
+        void set_genome(size_t *genome, const size_t pop_size)
+        void set_fitness(data_t *fitness)
+        void sort(const bool minimize);
 
     cdef Population *make_population(const string platform)
