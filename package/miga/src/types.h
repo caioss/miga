@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-typedef uint32_t seq_t;
+typedef uint8_t seq_t;
 typedef double data_t;
 
 #endif

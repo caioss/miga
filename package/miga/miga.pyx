@@ -3,7 +3,8 @@ from miga.Population cimport Population, make_population
 import multiprocessing
 import numpy as np
 
-np_seq_t = np.uint32
+np_seq_t = np.uint8
+np_size_t = np.uintp
 np_data_t = np.double
 
 cdef class MIGA:
@@ -23,6 +24,9 @@ cdef class MIGA:
 
     def __cinit__(self):
         self._population = make_population("CPU")
+
+    def __dealloc__(self):
+        del self._population
 
     def __init__(self):
         self.__clear_population()
@@ -196,13 +200,13 @@ cdef class MIGA:
         index = min(new_size, old_size)
 
         new_genome = np.require(
-            np.empty((new_size, num_seqs), np_seq_t, "C"),
-            np_seq_t,
+            np.empty((new_size, num_seqs), np_size_t, "C"),
+            np_size_t,
             ("C", "W", "O")
         )
 
         new_fitness = np.require(
-            np.zeros(new_size, np_seq_t, "C"),
+            np.zeros(new_size, np_size_t, "C"),
             np_data_t,
             ("C", "W", "O")
         )
@@ -213,7 +217,7 @@ cdef class MIGA:
             new_fitness[:index] = old_fitness[:index]
 
         # Apply shuffled genomes to new individuals
-        sample_genome = np.arange(num_seqs, dtype=np_seq_t)
+        sample_genome = np.arange(num_seqs, dtype=np_size_t)
         for i in range(index, new_size):
             np.random.shuffle(sample_genome)
             new_genome[i, :] = sample_genome
@@ -222,21 +226,38 @@ cdef class MIGA:
         self._fitness = new_fitness
 
     def __clear_population(self):
-        self._genome = np.empty((0, 0), np_seq_t, "C")
-        self._fitness = np.empty((0, 0), np_seq_t, "C")
+        self._genome = np.empty((0, 0), np_size_t, "C")
+        self._fitness = np.empty(0, np_data_t, "C")
 
-    def __update_parameters(self):
-        self._population.setQ(self._q)
-        self._population.setLambda(self._lambda)
-        # TODO
-        # self._population.setThreads(self._threads)
+    def __update_population(self):
+        self._population.set_q(self._q)
+        self._population.set_lambda(self._lambda)
+        self._population.set_threads(self._threads)
+
+        cdef size_t num_seqs = self._seq_a.shape[1]
+        cdef seq_t[:, :] seq_a = self._seq_a
+        cdef seq_t[:, :] seq_b = self._seq_b
+        self._population.set_msa(
+            num_seqs,
+            &seq_a[0, 0],
+            seq_a.shape[0],
+            &seq_b[0, 0],
+            seq_b.shape[0]
+        )
+
+        cdef size_t pop_size = self.pop_size
+        cdef size_t[:, :] genome = self._genome
+        self._population.set_genome(&genome[0, 0], pop_size)
+
+        cdef data_t[:] fitness = self._fitness
+        self._population.set_fitness(&fitness[0])
+
 
     def run(self, size_t generations):
-        self.__update_parameters()
+        self.__update_population()
 
         # Reordering population
-        # TODO
-        # self._population.sort(self._minimize)
+        self._population.sort(self._minimize)
 
         # Groups sizes
         cdef size_t pop_size = self.pop_size

@@ -123,10 +123,19 @@ class MIGATestCase(unittest.TestCase):
         self.assertGreater(dist, 0)
 
     def test_fitness_contents(self):
+        data = np.load("fitness_data.npz")
+        ref_genome = data["genome"]
+        ref_fitness = data["fitness"]
+
+        self.miga.set_msa(self.seq_a, self.seq_b)
+        self.miga.minimize = False
+        self.miga.genome = ref_genome
+
         self.assertTrue(np.all(self.miga.fitness == 0.0))
-        # TODO
-        # TODO run for 0 generations and test changes
-        # TODO
+
+        self.miga.run(0)
+
+        self.assertTrue(np.allclose(self.miga.fitness, ref_fitness))
 
     def test_fitness_shape(self):
         self.assertTupleEqual(self.miga.fitness.shape, (DEFAULT_POP_SIZE,))
@@ -141,9 +150,7 @@ class MIGATestCase(unittest.TestCase):
 
     def test_fitness_resize_data_copy(self):
         self.miga.set_msa(self.seq_a, self.seq_b)
-        # TODO
-        # TODO compute fitness here!
-        # TODO
+        self.miga.run(0)
         fitness20 = self.miga.fitness
 
         self.miga.pop_size = 10
@@ -257,8 +264,20 @@ class MIGATestCase(unittest.TestCase):
 
     def test_minimize(self):
         self.assertFalse(self.miga.minimize)
+
+        self.miga.set_msa(self.seq_a, self.seq_b)
+        self.miga.run(0)
+        self.assertTrue(np.all(np.diff(self.miga.fitness) <= 0))
+
         self.miga.minimize = True
         self.assertTrue(self.miga.minimize)
+
+        self.miga.run(0)
+        self.assertTrue(np.all(np.diff(self.miga.fitness) >= 0))
+
+    def test_run(self):
+        self.miga.set_msa(self.seq_a, self.seq_b)
+        self.miga.run(0)
 
     def tearDown(self):
         pass
