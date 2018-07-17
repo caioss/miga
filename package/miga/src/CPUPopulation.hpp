@@ -2,6 +2,7 @@
 #define CPUPOPULATION_HPP
 
 #include "Population.hpp"
+#include <random>
 
 class CPUPopulation : public Population {
 public:
@@ -17,6 +18,8 @@ public:
     void initialize() override;
     void finalize() override;
     void sort(const bool minimize) override;
+    void kill_and_reproduce(const size_t kill_start, const size_t kill_end, const size_t repr_start, const size_t repr_end) override;
+    void mutate(const double ratio, const size_t start, const size_t end) override;
 
 private:
     void reset_changed();
@@ -28,11 +31,12 @@ private:
 private:
 	size_t _num_threads;
 	size_t _pop_size;
-    seq_t _q;
     size_t _num_seqs;
     size_t _num_ic_a;
     size_t _num_ic_b;
+    seq_t _q;
     data_t _lambda;
+    std::default_random_engine _rng_engine;
     bool *_changed;
     size_t *_genome;
     seq_t *_seq_a;
