@@ -12,6 +12,7 @@ DEFAULT_Q = 21
 DEFAULT_POP_SIZE = 20
 DEFAULT_LAMBDA = 0.5
 DEFAULT_THREADS = multiprocessing.cpu_count()
+TESTS_REPEAT = 3
 
 class MIGATestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
@@ -275,12 +276,56 @@ class MIGATestCase(unittest.TestCase):
         self.miga.run(0)
         self.assertTrue(np.all(np.diff(self.miga.fitness) >= 0))
 
-    def test_run(self):
+    def test_run_consistent_genome(self):
         self.miga.set_msa(self.seq_a, self.seq_b)
+        seq_num = self.miga.seq_a.shape[0]
+
+        self.miga.run(2)
+        self.assert_consistent_genome(seq_num, self.miga.pop_size)
+
+    def test_run_maximization(self):
+        self.miga.minimize = False
+        self.miga.set_msa(self.seq_a, self.seq_b)
+        non_elite = int(self.miga.elite * self.miga.pop_size)
+
         self.miga.run(0)
+        old_fit = self.miga.fitness[:non_elite]
+
+        for step in range(TESTS_REPEAT):
+            self.miga.run(1)
+            new_fit = self.miga.fitness[:non_elite]
+            self.assertTrue(np.all(new_fit >= old_fit))
+            old_fit = new_fit
+
+    def test_run_minimization(self):
+        self.miga.minimize = True
+        self.miga.set_msa(self.seq_a, self.seq_b)
+        non_elite = int(self.miga.elite * self.miga.pop_size)
+
+        self.miga.run(0)
+        old_fit = self.miga.fitness[:non_elite]
+
+        for step in range(TESTS_REPEAT):
+            self.miga.run(1)
+            new_fit = self.miga.fitness[:non_elite]
+            self.assertTrue(np.all(new_fit <= old_fit))
+            old_fit = new_fit
+
+    def test_non_elite_mutation(self):
+        self.miga.set_msa(self.seq_a, self.seq_b)
+        non_elite = int(self.miga.elite * self.miga.pop_size)
+
+        self.miga.run(0)
+        old_gen = self.miga.genome
+
+        for step in range(TESTS_REPEAT):
+            self.miga.run(1)
+            new_gen = self.miga.genome
+            self.assertTrue(np.all(np.diag(cdist(old_gen, new_gen, "hamming"))[non_elite:] != 0))
+            old_gen = new_gen
 
     def tearDown(self):
         pass
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

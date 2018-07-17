@@ -255,30 +255,32 @@ cdef class MIGA:
 
     def run(self, size_t generations):
         self.__update_population()
+
+        # GA parameters
+        cdef size_t pop_size = self.pop_size
+        cdef size_t elite = int(self._elite * pop_size)
+        cdef size_t surv_num = int(pop_size - self._death * pop_size)
+        cdef double mutation = self._mutation
+        cdef bool minimize = self._minimize
+
+        # Prepare population to run GA
         self._population.initialize()
 
         # Reordering population
-        self._population.sort(self._minimize)
-
-        # Groups sizes
-        cdef size_t pop_size = self.pop_size
-        cdef size_t elite = int(self._elite * pop_size)
-        cdef size_t surv_num = int(pop_size - self._death * self.pop_size)
-        cdef size_t rep_num = self.pop_size - surv_num
+        self._population.sort(minimize)
         
         # Initiating simulation loop
         cdef size_t n
-        # for n in range(generations):
-# TODO
-
+        for n in range(generations):
             # Selection and reproduction
-            # self._population.kill_and_reproduce(surv_num, pop_size, 0, surv_num, self._mutation)
+            self._population.kill_and_reproduce(surv_num, pop_size, 0, surv_num)
 
             # Mutate non-elite members
-            # self._population.mutate(self._mutation, self._elite, surv_num)
+            self._population.mutate(mutation, elite, pop_size)
 
             # Reordering population
             # It's done here to keep the ordering after the simulation
-            # self._population.sort(self._minimize)
+            self._population.sort(minimize)
 
-        self._population.initialize()
+        # Cleanup population
+        self._population.finalize()

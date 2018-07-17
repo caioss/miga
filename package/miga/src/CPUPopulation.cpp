@@ -2,14 +2,20 @@
 #include <algorithm>
 #include <cmath>
 
+typedef std::uniform_int_distribution<size_t> rng_distrib_t;
+
 CPUPopulation::CPUPopulation()
-: _site_prob_a { nullptr },
+: _changed { nullptr },
+  _site_prob_a { nullptr },
   _site_prob_b { nullptr }
 {
+    std::random_device random_source;
+    _rng_engine = std::default_random_engine(random_source());
 }
 
 CPUPopulation::~CPUPopulation()
 {
+    delete[] _changed;
     delete[] _site_prob_a;
     delete[] _site_prob_b;
 }
@@ -44,7 +50,6 @@ void CPUPopulation::set_genome(size_t *genome, const size_t pop_size)
 {
     _pop_size = pop_size;
     _genome = genome;
-    reset_changed();
 }
 
 void CPUPopulation::set_fitness(data_t *fitness)
@@ -54,6 +59,9 @@ void CPUPopulation::set_fitness(data_t *fitness)
 
 void CPUPopulation::reset_changed()
 {
+    delete[] _changed;
+    _changed = new bool[_pop_size];
+    std::fill(_changed, _changed + _pop_size, true);
 }
 
 void CPUPopulation::sort(const bool minimize)
@@ -146,14 +154,55 @@ void CPUPopulation::update_site_probs()
     site_prob(_num_ic_b, _seq_b, _site_prob_b);
 }
 
+void CPUPopulation::kill_and_reproduce(const size_t kill_start, const size_t kill_end, const size_t repr_start, const size_t repr_end)
+{
+    rng_distrib_t rng_distrib(repr_start, repr_end - 1);
+
+    for (size_t index = kill_start; index < kill_end; index++) {
+        const size_t parent { rng_distrib(_rng_engine) };
+        size_t *genome { _genome + parent * _num_seqs };
+
+        std::copy(
+            genome,
+            genome + _num_seqs,
+            _genome + index * _num_seqs
+        );
+
+        _fitness[index] = _fitness[parent];
+        _changed[index] = false;
+    }
+}
+
+void CPUPopulation::mutate(const double ratio, const size_t start, const size_t end)
+{
+    rng_distrib_t rng_distrib(0, _num_seqs - 1);
+    const size_t swaps = ratio * _num_seqs;
+
+    for (size_t index = start; index < end; index++) {
+        for (size_t n = 0; n < swaps; n++) {
+            const size_t i { index * _num_seqs + rng_distrib(_rng_engine) };
+            const size_t j { index * _num_seqs + rng_distrib(_rng_engine) };
+
+            if (i == j)
+                continue;
+
+            const size_t temp { _genome[i] };
+            _genome[i] = _genome[j];
+            _genome[j] = temp;
+
+            _changed[index] = true;
+        }
+    }
+}
+
 void CPUPopulation::initialize()
 {
-    // We're ready to do the job. Let's go!
+    reset_changed();
 }
 
 void CPUPopulation::finalize()
 {
-    // Everything was as expected. We made it!
+    // Everything was as expected. We made it!!
 }
 
 void CPUPopulation::population_fitness()
@@ -161,7 +210,11 @@ void CPUPopulation::population_fitness()
 #pragma omp parallel for schedule(dynamic) num_threads(_num_threads)
     for (size_t i = 0; i < _pop_size; i++)
     {
-        _fitness[i] = single_fitness(i);
+        if (_changed[i])
+        {
+            _fitness[i] = single_fitness(i);
+            _changed[i] = false;
+        }
     }
 }
 

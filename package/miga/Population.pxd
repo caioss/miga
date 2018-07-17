@@ -14,5 +14,7 @@ cdef extern from "src/Population.hpp":
         void initialize() except +
         void finalize() except +
         void sort(const bool minimize)
+        void kill_and_reproduce(const size_t kill_start, const size_t kill_end, const size_t repr_start, const size_t repr_end)
+        void mutate(const double ratio, const size_t start, const size_t end)
 
     cdef Population *make_population(const string platform)

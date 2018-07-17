@@ -18,6 +18,8 @@ public:
     virtual void initialize() = 0;
     virtual void finalize() = 0;
     virtual void sort(const bool minimize) = 0;
+    virtual void kill_and_reproduce(const size_t kill_start, const size_t kill_end, const size_t repr_start, const size_t repr_end) = 0;
+    virtual void mutate(const double ratio, const size_t start, const size_t end) = 0;
 
 };
 
