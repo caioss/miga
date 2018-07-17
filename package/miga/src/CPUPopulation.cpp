@@ -146,6 +146,16 @@ void CPUPopulation::update_site_probs()
     site_prob(_num_ic_b, _seq_b, _site_prob_b);
 }
 
+void CPUPopulation::initialize()
+{
+    // We're ready to do the job. Let's go!
+}
+
+void CPUPopulation::finalize()
+{
+    // Everything was as expected. We made it!
+}
+
 void CPUPopulation::population_fitness()
 {
 #pragma omp parallel for schedule(dynamic) num_threads(_num_threads)

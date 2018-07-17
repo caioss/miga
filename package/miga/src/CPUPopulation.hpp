@@ -7,14 +7,16 @@ class CPUPopulation : public Population {
 public:
 	CPUPopulation();
     ~CPUPopulation();
-    std::string platform() const { return "CPU"; };
-    void set_q(const seq_t value);
-    void set_lambda(const data_t value);
-    void set_threads(const size_t threads);
-    void set_msa(const size_t num_seqs, seq_t *seq_a, const size_t ic_a, seq_t *seq_b, const size_t ic_b);
-    void set_genome(size_t *genome, const size_t pop_size);
-    void set_fitness(data_t *fitness);
-    void sort(const bool minimize);
+    std::string platform() const override { return "CPU"; };
+    void set_q(const seq_t value) override;
+    void set_lambda(const data_t value) override;
+    void set_threads(const size_t threads) override;
+    void set_msa(const size_t num_seqs, seq_t *seq_a, const size_t ic_a, seq_t *seq_b, const size_t ic_b) override;
+    void set_genome(size_t *genome, const size_t pop_size) override;
+    void set_fitness(data_t *fitness) override;
+    void initialize() override;
+    void finalize() override;
+    void sort(const bool minimize) override;
 
 private:
     void reset_changed();
