@@ -15,6 +15,8 @@ public:
     virtual void set_genome(size_t *genome, const size_t pop_size) = 0;
     virtual void set_fitness(data_t *fitness) = 0;
 
+    virtual void initialize() = 0;
+    virtual void finalize() = 0;
     virtual void sort(const bool minimize) = 0;
 
 };

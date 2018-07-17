@@ -255,6 +255,7 @@ cdef class MIGA:
 
     def run(self, size_t generations):
         self.__update_population()
+        self._population.initialize()
 
         # Reordering population
         self._population.sort(self._minimize)
@@ -279,3 +280,5 @@ cdef class MIGA:
             # Reordering population
             # It's done here to keep the ordering after the simulation
             # self._population.sort(self._minimize)
+
+        self._population.initialize()
