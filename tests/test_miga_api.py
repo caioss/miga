@@ -12,9 +12,8 @@ DEFAULT_Q = 21
 DEFAULT_POP_SIZE = 20
 DEFAULT_LAMBDA = 0.5
 DEFAULT_THREADS = multiprocessing.cpu_count()
-TESTS_REPEAT = 3
 
-class MIGATestCase(unittest.TestCase):
+class MigaAPITestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         msa = np.load("data_files/msa.npz")
@@ -31,15 +30,6 @@ class MIGATestCase(unittest.TestCase):
             self.miga.platform = "CRAZY"
 
         self.assertEqual(self.miga.platform, platform)
-
-    def test_cpu_platform(self):
-        self.miga.platform = "CPU"
-        self.assertEqual(self.miga.platform, "CPU")
-
-    # TODO
-    # def test_gpu_platform(self):
-    #     self.miga.platform = "GPU"
-    #     self.assertEqual(self.miga.platform, "GPU")
 
     def test_q(self):
         self.assertEqual(self.miga.q, DEFAULT_Q)
@@ -123,20 +113,8 @@ class MIGATestCase(unittest.TestCase):
         dist = cdist(self.miga.genome[20:, :], self.miga.genome[20:, :], "hamming")[indices].sum()
         self.assertGreater(dist, 0)
 
-    def test_fitness_contents(self):
-        data = np.load("data_files/fitness_data.npz")
-        ref_genome = data["genome"]
-        ref_fitness = data["fitness"]
-
-        self.miga.set_msa(self.seq_a, self.seq_b)
-        self.miga.minimize = False
-        self.miga.genome = ref_genome
-
+    def test_fitness(self):
         self.assertTrue(np.all(self.miga.fitness == 0.0))
-
-        self.miga.run(0)
-
-        self.assertTrue(np.allclose(self.miga.fitness, ref_fitness))
 
     def test_fitness_shape(self):
         self.assertTupleEqual(self.miga.fitness.shape, (DEFAULT_POP_SIZE,))
@@ -151,6 +129,7 @@ class MIGATestCase(unittest.TestCase):
 
     def test_fitness_resize_data_copy(self):
         self.miga.set_msa(self.seq_a, self.seq_b)
+        # Fitness is read-only. We have to run the GA here
         self.miga.run(0)
         fitness20 = self.miga.fitness
 
@@ -266,63 +245,8 @@ class MIGATestCase(unittest.TestCase):
     def test_minimize(self):
         self.assertFalse(self.miga.minimize)
 
-        self.miga.set_msa(self.seq_a, self.seq_b)
-        self.miga.run(0)
-        self.assertTrue(np.all(np.diff(self.miga.fitness) <= 0))
-
         self.miga.minimize = True
         self.assertTrue(self.miga.minimize)
-
-        self.miga.run(0)
-        self.assertTrue(np.all(np.diff(self.miga.fitness) >= 0))
-
-    def test_run_consistent_genome(self):
-        self.miga.set_msa(self.seq_a, self.seq_b)
-        seq_num = self.miga.seq_a.shape[0]
-
-        self.miga.run(2)
-        self.assert_consistent_genome(seq_num, self.miga.pop_size)
-
-    def test_run_maximization(self):
-        self.miga.minimize = False
-        self.miga.set_msa(self.seq_a, self.seq_b)
-        non_elite = int(self.miga.elite * self.miga.pop_size)
-
-        self.miga.run(0)
-        old_fit = self.miga.fitness[:non_elite]
-
-        for step in range(TESTS_REPEAT):
-            self.miga.run(1)
-            new_fit = self.miga.fitness[:non_elite]
-            self.assertTrue(np.all(new_fit >= old_fit))
-            old_fit = new_fit
-
-    def test_run_minimization(self):
-        self.miga.minimize = True
-        self.miga.set_msa(self.seq_a, self.seq_b)
-        non_elite = int(self.miga.elite * self.miga.pop_size)
-
-        self.miga.run(0)
-        old_fit = self.miga.fitness[:non_elite]
-
-        for step in range(TESTS_REPEAT):
-            self.miga.run(1)
-            new_fit = self.miga.fitness[:non_elite]
-            self.assertTrue(np.all(new_fit <= old_fit))
-            old_fit = new_fit
-
-    def test_non_elite_mutation(self):
-        self.miga.set_msa(self.seq_a, self.seq_b)
-        non_elite = int(self.miga.elite * self.miga.pop_size)
-
-        self.miga.run(0)
-        old_gen = self.miga.genome
-
-        for step in range(TESTS_REPEAT):
-            self.miga.run(1)
-            new_gen = self.miga.genome
-            self.assertTrue(np.all(np.diag(cdist(old_gen, new_gen, "hamming"))[non_elite:] != 0))
-            old_gen = new_gen
 
     def tearDown(self):
         pass
