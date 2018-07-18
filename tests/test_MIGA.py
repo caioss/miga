@@ -17,7 +17,7 @@ TESTS_REPEAT = 3
 class MIGATestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        msa = np.load("msa.npz")
+        msa = np.load("data_files/msa.npz")
         self.seq_a = msa["seq_a"]
         self.seq_b = msa["seq_b"]
 
@@ -124,7 +124,7 @@ class MIGATestCase(unittest.TestCase):
         self.assertGreater(dist, 0)
 
     def test_fitness_contents(self):
-        data = np.load("fitness_data.npz")
+        data = np.load("data_files/fitness_data.npz")
         ref_genome = data["genome"]
         ref_fitness = data["fitness"]
 
