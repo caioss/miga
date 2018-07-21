@@ -4,6 +4,8 @@ global-include *.c
 global-include *.cpp
 global-include *.h
 global-include *.hpp
+global-include *.cu
+global-include *.cuh
 graft third-party
 #recursive-include third-party *
 #include README INSTALL CHANGELOG LICENSE AUTHORS SUMMARY.txt
