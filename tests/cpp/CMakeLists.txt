@@ -35,6 +35,7 @@ set(MIGA_CPP_SRC
 
 set(MIGA_CUDA_SRC
     "${MIGA_SRC_DIR}/GPUPopulation.cu"
+    "${MIGA_SRC_DIR}/SimpleGPUPopulation.cu"
 )
 
 add_library(miga_lib STATIC ${MIGA_CPP_SRC} ${MIGA_CUDA_SRC})
@@ -42,9 +43,11 @@ include_directories(${MIGA_SRC_DIR} " ../../package/third-party/cub")
 
 # Compiler options
 if(NOT CMAKE_CUDA_FLAGS)
-  set(CMAKE_CUDA_FLAGS "-arch compute_30 -code sm_30,compute_30")
+    set(CMAKE_CUDA_FLAGS "-gencode=arch=compute_30,code=compute_30 -gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_50,code=compute_50 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=compute_60 -gencode=arch=compute_60,code=sm_60")
 endif()
+
 set_target_properties(miga_lib PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
+
 set_source_files_properties(${MIGA_CUDA_SRC} PROPERTIES COMPILE_FLAGS "-cudart static -res-usage -maxrregcount 63 -Xcompiler -march=native")
 
 if(MSVC)

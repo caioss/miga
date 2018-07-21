@@ -119,7 +119,7 @@ void CPUPopulation::sort(const bool minimize)
 void CPUPopulation::site_prob(const index_t num_ic, const seq_t *msa, data_t *site_prob)
 {
     const data_t residual { _lambda / (_lambda * _q + _num_seqs * _q) };
-    const data_t scale { 1.0 / (_lambda + _num_seqs) };
+    const data_t scale { data_t(1.0) / (_lambda + _num_seqs) };
 
     std::fill(site_prob, site_prob + num_ic * _q, 0.0);
 
@@ -169,7 +169,7 @@ void CPUPopulation::kill_and_reproduce(const index_t kill_start, const index_t k
         );
 
         _fitness[index] = _fitness[parent];
-        _changed[index] = false;
+        _changed[index] = _changed[parent];
     }
 }
 
@@ -218,13 +218,13 @@ void CPUPopulation::population_fitness()
     }
 }
 
-data_t CPUPopulation::single_fitness(const index_t index) const
+double CPUPopulation::single_fitness(const index_t index) const
 {
-    data_t coupling { 0 };
+    double coupling { 0 };
     uint32_t *pair_count { new uint32_t[_q * _q] };
     const index_t *genome { _genome + index * _num_seqs };
 
-    const data_t residual { _lambda / (_lambda * _q * _q + _num_seqs * _q * _q) };
+    const double residual { _lambda / (_lambda * _q * _q + _num_seqs * _q * _q) };
 
     for (index_t ic_a = 0; ic_a < _num_ic_a; ++ic_a)
     {
@@ -243,9 +243,9 @@ data_t CPUPopulation::single_fitness(const index_t index) const
             {
                 for (index_t aa2 = 0; aa2 < _q; ++aa2)
                 {
-                    const data_t pair_prob { residual + pair_count[aa1 * _q + aa2] / (_num_seqs + _lambda) };
-                    const data_t aa1_prob { _site_prob_a[ic_a * _q + aa1] };
-                    const data_t aa2_prob { _site_prob_b[ic_b * _q + aa2] };
+                    const double pair_prob { residual + pair_count[aa1 * _q + aa2] / (_num_seqs + _lambda) };
+                    const double aa1_prob { _site_prob_a[ic_a * _q + aa1] };
+                    const double aa2_prob { _site_prob_b[ic_b * _q + aa2] };
 
                     coupling += pair_prob * log(pair_prob / (aa1_prob * aa2_prob));
                 }

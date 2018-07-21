@@ -5,6 +5,6 @@
 
 typedef int32_t seq_t;
 typedef int32_t index_t;
-typedef double data_t;
+typedef float data_t;
 
 #endif

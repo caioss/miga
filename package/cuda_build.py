@@ -28,7 +28,11 @@ class CUDABuild:
 
         self.arch = os.environ.get("CUDA_ARCH", "")
         if not self.arch:
-            self.arch = "-arch compute_30 -code sm_30,compute_30"
+            self.arch = ""
+            # Comment out unnecessary architectures to compile faster
+            self.arch += " -gencode=arch=compute_30,code=compute_30 -gencode=arch=compute_30,code=sm_30"
+            self.arch += " -gencode=arch=compute_50,code=compute_50 -gencode=arch=compute_50,code=sm_50"
+            self.arch += " -gencode=arch=compute_60,code=compute_60 -gencode=arch=compute_60,code=sm_60"
 
     def __bool__(self):
         return self.installed
@@ -36,7 +40,7 @@ class CUDABuild:
     def __nonzero__(self):
         return self.__bool__()
 
-    def compile(self, file_list, dry_run=False):
+    def compile(self, file_list, includes, dry_run=False):
         object_list = []
 
         if not self.installed:
@@ -49,14 +53,16 @@ class CUDABuild:
             if dry_run:
                 continue
 
-            command = "{} -c {} -o {} -Xcompiler -fPIC {} -cudart static -O3 -std c++11".format(
+            command = "{} {} -c -o {} -Xcompiler -fPIC {} -cudart static -O3 -std c++11 {}".format(
                 self.nvcc,
                 file,
                 obj_name,
                 self.arch,
+                " ".join("-I{}".format(folder) for folder in includes),
             )
+            print(command)
 
-            proc = Popen(command.split(" "))
+            proc = Popen(command.split())
 
             out = proc.communicate()
             if out[0]:
