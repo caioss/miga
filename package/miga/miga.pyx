@@ -5,7 +5,7 @@ import numpy as np
 
 np_seq_t = np.int32
 np_index_t = np.int32
-np_data_t = np.double
+np_data_t = np.float32
 
 cdef class MIGA:
     cdef:
@@ -206,7 +206,7 @@ cdef class MIGA:
         )
 
         new_fitness = np.require(
-            np.zeros(new_size, np_index_t, "C"),
+            np.zeros(new_size, np_data_t, "C"),
             np_data_t,
             ("C", "W", "O")
         )

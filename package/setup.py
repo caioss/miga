@@ -40,14 +40,15 @@ cython_cpp_suffix = ".pyx" if use_cython else ".cpp"
 
 # CUDA detection
 cuda = CUDABuild()
-cuda_src = ["miga/src/GPUPopulation.cu"]
+cuda_src = ["miga/src/GPUPopulation.cu", "miga/src/SimpleGPUPopulation.cu"]
+cuda_inc = ["third-party/cub"]
 if cuda:
     print("Installing with CUDA")
 
     if "egg_info" in sys.argv:
-        cuda_obj = cuda.compile(cuda_src, True)
+        cuda_obj = cuda.compile(cuda_src, cuda_inc, True)
     else:
-        cuda_obj = cuda.compile(cuda_src)
+        cuda_obj = cuda.compile(cuda_src, cuda_inc)
 
     cuda_macros = [("HAS_CUDA", None)]
     cuda_libs = ["cudart_static", "rt"]
