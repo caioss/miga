@@ -1,16 +1,21 @@
 #
 # Adapted from https://github.com/dmonopoly/gtest-cmake-example
-# and https://github.com/kaizouman/gtest-cmake-example
 #
-cmake_minimum_required(VERSION 2.11)
+cmake_minimum_required(VERSION 3.9)
 
-set(PROJECT_NAME MigaTests)
+set(PROJECT_NAME MigaTests LANGUAGES CXX CUDA)
 project(${PROJECT_NAME})
 
 # C++11
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CUDA_STANDARD 11)
+
+# Build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
 
 # OpenMP
 find_package(OpenMP REQUIRED)
@@ -20,25 +25,32 @@ if (OPENMP_FOUND)
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
+# Miga lib
+set(MIGA_SRC_DIR "../../package/miga/src")
+
+set(MIGA_CPP_SRC
+    "${MIGA_SRC_DIR}/Population.cpp"
+    "${MIGA_SRC_DIR}/CPUPopulation.cpp"
+)
+
+set(MIGA_CUDA_SRC
+    "${MIGA_SRC_DIR}/GPUPopulation.cu"
+)
+
+add_library(miga_lib STATIC ${MIGA_CPP_SRC} ${MIGA_CUDA_SRC})
+include_directories(${MIGA_SRC_DIR})
+
 # Compiler options
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_CUDA_FLAGS)
+  set(CMAKE_CUDA_FLAGS "-arch compute_30 -code sm_30,compute_30")
 endif()
+set_target_properties(miga_lib PROPERTIES CUDA_SEPARABLE_COMPILATION OFF)
+set_source_files_properties(${MIGA_CUDA_SRC} PROPERTIES COMPILE_FLAGS "-cudart static -res-usage -maxrregcount 63 -Xcompiler -march=native")
 
 if(MSVC)
-    add_compile_options("/W4" "$<$<CONFIG:RELEASE>:/O2>")
-else()
-    add_compile_options("-Wall" "$<$<CONFIG:RELEASE>:-O3>")
+    set_source_files_properties(${MIGA_CPP_SRC} PROPERTIES COMPILE_FLAGS "/W4 $<$<CONFIG:RELEASE>:/O2>")
 
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        add_compile_options("-stdlib=libc++")
-    else()
-        # nothing special for gcc at the moment
-    endif()
-endif()
-
-# Force static runtime libraries for msvc builds
-if(MSVC)
+    # Force static runtime libraries for msvc builds
     set(variables 
         CMAKE_CXX_FLAGS_DEBUG
         CMAKE_CXX_FLAGS_RELEASE
@@ -50,24 +62,16 @@ if(MSVC)
             string(REGEX REPLACE "/MD" "/MT" ${variable} "${${variable}}")
         endif()
     endforeach()
+else()
+    # General unix flags
+    set_source_files_properties(${MIGA_CPP_SRC} PROPERTIES COMPILE_FLAGS "-Wall -march=native $<$<CONFIG:RELEASE>:-O3>")
+
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set_source_files_properties(${MIGA_CPP_SRC} PROPERTIES COMPILE_FLAGS "-stdlib=libc++")
+    endif()
 endif()
 
-# Miga sources
-set(MIGA_SRC "../../package/miga/src")
-set(MIGA_CPP 
-    "${MIGA_SRC}/Population.cpp"
-    "${MIGA_SRC}/CPUPopulation.cpp"
-)
-
-add_library(miga_lib ${MIGA_CPP})
-include_directories(${MIGA_SRC})
-
 # Testing
-if (APPLE)
-    add_definitions(-DGTEST_USE_OWN_TR1_TUPLE)
-    add_definitions(-D__GLIBCXX__)
-endif (APPLE)
-
 add_subdirectory(lib/gtest)
 
 enable_testing()
@@ -80,6 +84,14 @@ add_executable(all_tests main.cpp ga_tests.cpp)
 target_link_libraries(all_tests gtest gtest_main)
 # Miga code
 target_link_libraries(all_tests miga_lib)
+
+if(APPLE)
+    add_definitions(-DGTEST_USE_OWN_TR1_TUPLE)
+    add_definitions(-D__GLIBCXX__)
+    # We need to add the path to the driver (libcuda.dylib) as an rpath, 
+    # so that the static cuda runtime can find it at runtime.
+    set_property(TARGET all_tests PROPERTY BUILD_RPATH ${CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES})
+endif()
 
 # This is so you can do 'make test' to see all your tests run, instead of
 # manually running the executable
