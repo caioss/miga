@@ -1,4 +1,6 @@
+from cuda_build import CUDABuild
 import os
+import sys
 from distutils.version import LooseVersion
 from setuptools import setup, find_packages, Extension
 
@@ -26,13 +28,36 @@ def get_cython():
 
     return False
 
+
 # Get readme content
 with open("README.rst") as fd:
     LONG_DESCRIPTION = fd.read()
 
+# Cython detection
 use_cython = get_cython()
 cython_c_suffix = ".pyx" if use_cython else ".c"
 cython_cpp_suffix = ".pyx" if use_cython else ".cpp"
+
+# CUDA detection
+cuda = CUDABuild()
+cuda_src = ["miga/src/GPUPopulation.cu"]
+if cuda:
+    print("Installing with CUDA")
+
+    if "egg_info" in sys.argv:
+        cuda_obj = cuda.compile(cuda_src, True)
+    else:
+        cuda_obj = cuda.compile(cuda_src)
+
+    cuda_macros = [("HAS_CUDA", None)]
+    cuda_libs = ["cudart_static", "rt"]
+    cuda_libs_dir = [cuda.lib]
+else:
+    print("Installing without CUDA")
+    cuda_obj = []
+    cuda_macros = []
+    cuda_libs = []
+    cuda_libs_dir = []
 
 extensions = [
     Extension(
@@ -40,7 +65,10 @@ extensions = [
         ["miga/miga" + cython_cpp_suffix, "miga/src/Population.cpp", "miga/src/CPUPopulation.cpp"],
         language = "c++",
         include_dirs = ["miga/src"],
-        libraries = [],
+        libraries = [] + cuda_libs,
+        library_dirs = [] + cuda_libs_dir,
+        extra_objects = [] + cuda_obj,
+        define_macros = [] + cuda_macros,
         extra_compile_args = ["-O3", "-Wall", "-pedantic", "-std=c++11", "-fopenmp", "-march=native"],
         extra_link_args=["-std=c++11", "-fopenmp"]
     ),

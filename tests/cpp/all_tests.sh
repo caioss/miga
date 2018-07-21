@@ -3,5 +3,5 @@
 [ ! -d "build" ] && mkdir build
 cd build
 cmake ..
-make
+make $@
 ./all_tests
