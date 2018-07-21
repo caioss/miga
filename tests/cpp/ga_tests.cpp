@@ -1,6 +1,8 @@
 #include "MatData.hpp"
 #include "test_tools.hpp"
 #include "CPUPopulation.hpp"
+#include "GPUPopulation.hpp"
+#include "SimpleGPUPopulation.hpp"
 #include "types.h"
 #include "gtest/gtest.h"
 #include <vector>
@@ -9,7 +11,7 @@ static const MatData<int32_t> GENOME("../data/shuffled_genome.bin");
 static const MatData<int32_t> SEQ_A("../data/seq_a.transposed.bin");
 static const MatData<int32_t> SEQ_B("../data/seq_b.transposed.bin");
 static const MatData<int32_t> INDICES("../data/sorted_indices.bin");
-static const MatData<double> FITNESS("../data/sorted_fitness.bin");
+static const MatData<double> FITNESS("../data/sorted_fitness.double.bin");
 
 /*
  * Population typed fixture
@@ -40,10 +42,10 @@ public:
       mutation { 0.01 },
       lambda { 0.5 },
       minimize { false },
-      genome ( GENOME.data ),
-      seq_a ( SEQ_A.data ),
-      seq_b ( SEQ_B.data ),
-      fitness ( FITNESS.data )
+      genome ( GENOME.data.begin(), GENOME.data.end() ),
+      seq_a ( SEQ_A.data.begin(), SEQ_A.data.end() ),
+      seq_b ( SEQ_B.data.begin(), SEQ_B.data.end() ),
+      fitness ( pop_size )
     {
         // Set data
         population->set_q(q);
@@ -65,7 +67,7 @@ public:
     }
 };
 
-using PopulationTypes = ::testing::Types<CPUPopulation>;
+using PopulationTypes = ::testing::Types<CPUPopulation, GPUPopulation, SimpleGPUPopulation>;
 
 TYPED_TEST_CASE(GATest, PopulationTypes);
 
@@ -83,11 +85,6 @@ TYPED_TEST(GATest, InitializeFinalize)
     EXPECT_TRUE(vectors_equal(this->genome.data(), GENOME.ptr(), GENOME.size()));
     EXPECT_TRUE(vectors_equal(this->seq_a.data(), SEQ_A.ptr(), SEQ_A.size()));
     EXPECT_TRUE(vectors_equal(this->seq_b.data(), SEQ_B.ptr(), SEQ_B.size()));
-
-    for (size_t i = 0; i != FITNESS.size(); ++i)
-    {
-        EXPECT_EQ(this->fitness[i], FITNESS[i]);
-    }
 }
 
 /*
@@ -104,7 +101,20 @@ TYPED_TEST(GATest, FitnessValue)
 
     for (size_t i = 0; i != FITNESS.size(); ++i)
     {
-        EXPECT_FLOAT_EQ(this->fitness[i], FITNESS[i]);
+        EXPECT_NEAR(this->fitness[i], FITNESS[i], 0.001);
+    }
+
+    pop->initialize();
+    pop->sort(false);
+    pop->sort(false);
+    pop->sort(false);
+    pop->sort(false);
+    pop->sort(false);
+    pop->finalize();
+
+    for (size_t i = 0; i != FITNESS.size(); ++i)
+    {
+        EXPECT_NEAR(this->fitness[i], FITNESS[i], 0.001);
     }
 }
 
@@ -155,11 +165,21 @@ TYPED_TEST(GATest, GenomeReorder)
     {
         EXPECT_TRUE(vectors_equal(genome + i * seq_num, GENOME.ptr() + INDICES[i] * seq_num, seq_num));
     }
+
+    // Ascending
+    pop->initialize();
+    pop->sort(true);
+    pop->finalize();
+
+    for (index_t i = 0; i != this->pop_size; ++i)
+    {
+        EXPECT_TRUE(vectors_equal(genome + i * seq_num, GENOME.ptr() + INDICES[this->pop_size - i - 1] * seq_num, seq_num));
+    }
 }
 
 /*
  * Test if all new individuals are sons from survivors 1 and 2.
- * Survivor 0 must not reproduce.
+ * Survivors 0 and pop_size - 1 must not reproduce.
  * Test if survivors genome aren't touched
  */
 TYPED_TEST(GATest, Reproduce)
@@ -235,7 +255,7 @@ TYPED_TEST(GATest, Mutate)
             }
         }
         changes /= 2 * seq_num; // Swap is between two positions
-        EXPECT_GT(changes, 0.0);
+        EXPECT_GT(changes, this->mutation * 0.8);
         EXPECT_LE(changes, this->mutation);
     }
 

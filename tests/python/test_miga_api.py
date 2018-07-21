@@ -240,7 +240,7 @@ class MigaAPITestCase(unittest.TestCase):
             self.miga.lambda_ = -1
 
         self.miga.lambda_ = 0.1
-        self.assertEqual(self.miga.lambda_, 0.1)
+        self.assertAlmostEqual(self.miga.lambda_, 0.1)
 
     def test_minimize(self):
         self.assertFalse(self.miga.minimize)

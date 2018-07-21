@@ -27,6 +27,11 @@ public:
     {
         std::ifstream file(filename, std::ios::binary);
 
+        if (!file)
+        {
+            throw std::runtime_error("Could not open data file");
+        }
+
         // Stop eating new lines in binary mode!!!
         file.unsetf(std::ios::skipws);
 

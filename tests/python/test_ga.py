@@ -33,7 +33,8 @@ class BaseGATestCase(unittest.TestCase):
             self.assertTrue(genome[i, :].max() == seq_num - 1)
 
     def test_fitness_calculation(self):
-        data = np.load("data_files/fitness_data.npz")
+        data = np.load("data_files/fitness_data.double.npz")
+
         ref_genome = data["genome"]
         ref_fitness = data["fitness"]
 
@@ -72,7 +73,7 @@ class BaseGATestCase(unittest.TestCase):
         for step in range(TESTS_REPEAT):
             self.miga.run(1)
             new_fit = self.miga.fitness[:non_elite]
-            self.assertTrue(np.all(new_fit >= old_fit))
+            self.assertTrue(np.all((new_fit > old_fit) | np.isclose(new_fit, old_fit)))
             old_fit = new_fit
 
         self.assertGreater(self.miga.fitness.max(), first_max, "\nThis test sometimes fails. Run it again")
@@ -89,7 +90,7 @@ class BaseGATestCase(unittest.TestCase):
         for step in range(TESTS_REPEAT):
             self.miga.run(1)
             new_fit = self.miga.fitness[:non_elite]
-            self.assertTrue(np.all(new_fit <= old_fit))
+            self.assertTrue(np.all((new_fit < old_fit) | np.isclose(new_fit, old_fit)))
             old_fit = new_fit
 
         self.assertLess(self.miga.fitness.min(), first_min, "\nThis test sometimes fails. Please run it again")
@@ -122,9 +123,17 @@ class CPUGATestCase(BaseGATestCase):
 #######
 # GPU #
 #######
-# class GPUGATestCase(BaseGATestCase):
-#     def platform(self):
-#         return "GPU"
+class GPUGATestCase(BaseGATestCase):
+    def platform(self):
+        return "GPU"
+
+
+#############
+# SimpleGPU #
+#############
+class SimpleGPUGATestCase(BaseGATestCase):
+    def platform(self):
+        return "SimpleGPU"
 
 # Delete base class to avoid running it
 del BaseGATestCase
