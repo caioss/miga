@@ -3,8 +3,8 @@ from miga.Population cimport Population, make_population
 import multiprocessing
 import numpy as np
 
-np_seq_t = np.uint8
-np_size_t = np.uintp
+np_seq_t = np.int32
+np_index_t = np.int32
 np_data_t = np.double
 
 cdef class MIGA:
@@ -200,13 +200,13 @@ cdef class MIGA:
         index = min(new_size, old_size)
 
         new_genome = np.require(
-            np.empty((new_size, num_seqs), np_size_t, "C"),
-            np_size_t,
+            np.empty((new_size, num_seqs), np_index_t, "C"),
+            np_index_t,
             ("C", "W", "O")
         )
 
         new_fitness = np.require(
-            np.zeros(new_size, np_size_t, "C"),
+            np.zeros(new_size, np_index_t, "C"),
             np_data_t,
             ("C", "W", "O")
         )
@@ -217,7 +217,7 @@ cdef class MIGA:
             new_fitness[:index] = old_fitness[:index]
 
         # Apply shuffled genomes to new individuals
-        sample_genome = np.arange(num_seqs, dtype=np_size_t)
+        sample_genome = np.arange(num_seqs, dtype=np_index_t)
         for i in range(index, new_size):
             np.random.shuffle(sample_genome)
             new_genome[i, :] = sample_genome
@@ -226,7 +226,7 @@ cdef class MIGA:
         self._fitness = new_fitness
 
     def __clear_population(self):
-        self._genome = np.empty((0, 0), np_size_t, "C")
+        self._genome = np.empty((0, 0), np_index_t, "C")
         self._fitness = np.empty(0, np_data_t, "C")
 
     def __update_population(self):
@@ -234,7 +234,7 @@ cdef class MIGA:
         self._population.set_lambda(self._lambda)
         self._population.set_threads(self._threads)
 
-        cdef size_t num_seqs = self._seq_a.shape[1]
+        cdef index_t num_seqs = self._seq_a.shape[1]
         cdef seq_t[:, :] seq_a = self._seq_a
         cdef seq_t[:, :] seq_b = self._seq_b
         self._population.set_msa(
@@ -245,21 +245,21 @@ cdef class MIGA:
             seq_b.shape[0]
         )
 
-        cdef size_t pop_size = self.pop_size
-        cdef size_t[:, :] genome = self._genome
+        cdef index_t pop_size = self.pop_size
+        cdef index_t[:, :] genome = self._genome
         self._population.set_genome(&genome[0, 0], pop_size)
 
         cdef data_t[:] fitness = self._fitness
         self._population.set_fitness(&fitness[0])
 
 
-    def run(self, size_t generations):
+    def run(self, index_t generations):
         self.__update_population()
 
         # GA parameters
-        cdef size_t pop_size = self.pop_size
-        cdef size_t elite = int(self._elite * pop_size)
-        cdef size_t surv_num = int(pop_size - self._death * pop_size)
+        cdef index_t pop_size = self.pop_size
+        cdef index_t elite = int(self._elite * pop_size)
+        cdef index_t surv_num = int(pop_size - self._death * pop_size)
         cdef double mutation = self._mutation
         cdef bool minimize = self._minimize
 
@@ -270,7 +270,7 @@ cdef class MIGA:
         self._population.sort(minimize)
         
         # Initiating simulation loop
-        cdef size_t n
+        cdef index_t n
         for n in range(generations):
             # Selection and reproduction
             self._population.kill_and_reproduce(surv_num, pop_size, 0, surv_num)
