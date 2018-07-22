@@ -12,5 +12,8 @@ local_test/
 # Python distribution files
 maintainer/dist_build/
 
+# Google test build dir
+tests/cpp/build/
+
 # Vim plugins
 .syntastic_*_config
