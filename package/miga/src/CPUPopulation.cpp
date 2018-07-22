@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cmath>
 
-typedef std::uniform_int_distribution<size_t> rng_distrib_t;
+typedef std::uniform_int_distribution<index_t> rng_distrib_t;
 
 CPUPopulation::CPUPopulation()
 : _changed { nullptr },
@@ -35,7 +35,7 @@ void CPUPopulation::set_threads(const size_t threads)
 	_num_threads = threads;
 }
 
-void CPUPopulation::set_msa(const size_t numSeqs, seq_t *seq_a, const size_t ic_a, seq_t *seq_b, const size_t ic_b)
+void CPUPopulation::set_msa(const index_t numSeqs, seq_t *seq_a, const index_t ic_a, seq_t *seq_b, const index_t ic_b)
 {
     _num_seqs = numSeqs;
     _num_ic_a = ic_a;
@@ -46,7 +46,7 @@ void CPUPopulation::set_msa(const size_t numSeqs, seq_t *seq_a, const size_t ic_
     update_site_probs();
 }
 
-void CPUPopulation::set_genome(size_t *genome, const size_t pop_size)
+void CPUPopulation::set_genome(index_t *genome, const index_t pop_size)
 {
     _pop_size = pop_size;
     _genome = genome;
@@ -71,8 +71,8 @@ void CPUPopulation::sort(const bool minimize)
         return;
     }
 
-    size_t *indices = new size_t[_pop_size];
-    for (size_t i = 0; i < _pop_size; i++)
+    index_t *indices = new index_t[_pop_size];
+    for (index_t i = 0; i < _pop_size; i++)
     {
         indices[i] = i;
     }
@@ -81,24 +81,24 @@ void CPUPopulation::sort(const bool minimize)
 
     if (minimize)
     {
-        std::sort(indices, indices + _pop_size, [&](size_t a, size_t b) -> bool {
+        std::sort(indices, indices + _pop_size, [&](index_t a, index_t b) -> bool {
             return _fitness[a] < _fitness[b];
         });
     }
     else
     {
-        std::sort(indices, indices + _pop_size, [&](size_t a, size_t b) -> bool {
+        std::sort(indices, indices + _pop_size, [&](index_t a, index_t b) -> bool {
             return _fitness[a] > _fitness[b];
         });
     }
 
-    size_t *sorted_genome = new size_t[_pop_size * _num_seqs];
+    index_t *sorted_genome = new index_t[_pop_size * _num_seqs];
     data_t *sorted_fitness = new data_t[_pop_size];
 
-    for (size_t i = 0; i < _pop_size; i++)
+    for (index_t i = 0; i < _pop_size; i++)
     {
-        const size_t old_index { indices[i] };
-        size_t *genome { _genome + old_index * _num_seqs };
+        const index_t old_index { indices[i] };
+        index_t *genome { _genome + old_index * _num_seqs };
 
         std::copy(genome, genome + _num_seqs, sorted_genome + i * _num_seqs);
         
@@ -116,26 +116,26 @@ void CPUPopulation::sort(const bool minimize)
     delete[] sorted_genome;
 }
 
-void CPUPopulation::site_prob(const size_t num_ic, const seq_t *msa, data_t *site_prob)
+void CPUPopulation::site_prob(const index_t num_ic, const seq_t *msa, data_t *site_prob)
 {
     const data_t residual { _lambda / (_lambda * _q + _num_seqs * _q) };
     const data_t scale { 1.0 / (_lambda + _num_seqs) };
 
     std::fill(site_prob, site_prob + num_ic * _q, 0.0);
 
-    for (size_t ic = 0; ic < num_ic; ++ic)
+    for (index_t ic = 0; ic < num_ic; ++ic)
     {
-        for (size_t seq = 0; seq < _num_seqs; ++seq)
+        for (index_t seq = 0; seq < _num_seqs; ++seq)
         {
             const seq_t aa { msa[ic * _num_seqs + seq] };
             ++site_prob[ic * _q + aa];
         }
     }
-    for (size_t ic = 0; ic < num_ic; ++ic)
+    for (index_t ic = 0; ic < num_ic; ++ic)
     {
-        for (size_t aa = 0; aa < _q; ++aa)
+        for (index_t aa = 0; aa < _q; ++aa)
         {
-            const size_t index { ic * _q + aa };
+            const index_t index { ic * _q + aa };
             site_prob[index] *= scale;
             site_prob[index] += residual;
         }
@@ -154,13 +154,13 @@ void CPUPopulation::update_site_probs()
     site_prob(_num_ic_b, _seq_b, _site_prob_b);
 }
 
-void CPUPopulation::kill_and_reproduce(const size_t kill_start, const size_t kill_end, const size_t repr_start, const size_t repr_end)
+void CPUPopulation::kill_and_reproduce(const index_t kill_start, const index_t kill_end, const index_t repr_start, const index_t repr_end)
 {
     rng_distrib_t rng_distrib(repr_start, repr_end - 1);
 
-    for (size_t index = kill_start; index < kill_end; index++) {
-        const size_t parent { rng_distrib(_rng_engine) };
-        size_t *genome { _genome + parent * _num_seqs };
+    for (index_t index = kill_start; index < kill_end; index++) {
+        const index_t parent { rng_distrib(_rng_engine) };
+        index_t *genome { _genome + parent * _num_seqs };
 
         std::copy(
             genome,
@@ -173,20 +173,20 @@ void CPUPopulation::kill_and_reproduce(const size_t kill_start, const size_t kil
     }
 }
 
-void CPUPopulation::mutate(const double ratio, const size_t start, const size_t end)
+void CPUPopulation::mutate(const double ratio, const index_t start, const index_t end)
 {
     rng_distrib_t rng_distrib(0, _num_seqs - 1);
-    const size_t swaps = ratio * _num_seqs;
+    const index_t swaps = ratio * _num_seqs;
 
-    for (size_t index = start; index < end; index++) {
-        for (size_t n = 0; n < swaps; n++) {
-            const size_t i { index * _num_seqs + rng_distrib(_rng_engine) };
-            const size_t j { index * _num_seqs + rng_distrib(_rng_engine) };
+    for (index_t index = start; index < end; index++) {
+        for (index_t n = 0; n < swaps; n++) {
+            const index_t i { index * _num_seqs + rng_distrib(_rng_engine) };
+            const index_t j { index * _num_seqs + rng_distrib(_rng_engine) };
 
             if (i == j)
                 continue;
 
-            const size_t temp { _genome[i] };
+            const index_t temp { _genome[i] };
             _genome[i] = _genome[j];
             _genome[j] = temp;
 
@@ -208,7 +208,7 @@ void CPUPopulation::finalize()
 void CPUPopulation::population_fitness()
 {
 #pragma omp parallel for schedule(dynamic) num_threads(_num_threads)
-    for (size_t i = 0; i < _pop_size; i++)
+    for (index_t i = 0; i < _pop_size; i++)
     {
         if (_changed[i])
         {
@@ -218,30 +218,30 @@ void CPUPopulation::population_fitness()
     }
 }
 
-data_t CPUPopulation::single_fitness(const size_t index) const
+data_t CPUPopulation::single_fitness(const index_t index) const
 {
     data_t coupling { 0 };
     uint32_t *pair_count { new uint32_t[_q * _q] };
-    const size_t *genome { _genome + index * _num_seqs };
+    const index_t *genome { _genome + index * _num_seqs };
 
     const data_t residual { _lambda / (_lambda * _q * _q + _num_seqs * _q * _q) };
 
-    for (size_t ic_a = 0; ic_a < _num_ic_a; ++ic_a)
+    for (index_t ic_a = 0; ic_a < _num_ic_a; ++ic_a)
     {
-        for (size_t ic_b = 0; ic_b < _num_ic_b; ++ic_b)
+        for (index_t ic_b = 0; ic_b < _num_ic_b; ++ic_b)
         {
             std::fill(pair_count, pair_count + _q * _q, 0);
 
-            for (size_t seq = 0; seq < _num_seqs; ++seq)
+            for (index_t seq = 0; seq < _num_seqs; ++seq)
             {
                 const seq_t aa1 { _seq_a[ic_a * _num_seqs + seq] };
                 const seq_t aa2 { _seq_b[ic_b * _num_seqs + genome[seq]] };
                 ++pair_count[aa1 * _q + aa2];
             }
 
-            for (size_t aa1 = 0; aa1 < _q; ++aa1)
+            for (index_t aa1 = 0; aa1 < _q; ++aa1)
             {
-                for (size_t aa2 = 0; aa2 < _q; ++aa2)
+                for (index_t aa2 = 0; aa2 < _q; ++aa2)
                 {
                     const data_t pair_prob { residual + pair_count[aa1 * _q + aa2] / (_num_seqs + _lambda) };
                     const data_t aa1_prob { _site_prob_a[ic_a * _q + aa1] };

@@ -11,15 +11,15 @@ public:
     virtual void set_q(const seq_t value) = 0;
     virtual void set_lambda(const data_t value) = 0;
     virtual void set_threads(const size_t threads) = 0;
-    virtual void set_msa(const size_t num_seqs, seq_t *seq_a, const size_t ic_a, seq_t *seq_b, const size_t ic_b) = 0;
-    virtual void set_genome(size_t *genome, const size_t pop_size) = 0;
+    virtual void set_msa(const index_t num_seqs, seq_t *seq_a, const index_t ic_a, seq_t *seq_b, const index_t ic_b) = 0;
+    virtual void set_genome(index_t *genome, const index_t pop_size) = 0;
     virtual void set_fitness(data_t *fitness) = 0;
 
     virtual void initialize() = 0;
     virtual void finalize() = 0;
     virtual void sort(const bool minimize) = 0;
-    virtual void kill_and_reproduce(const size_t kill_start, const size_t kill_end, const size_t repr_start, const size_t repr_end) = 0;
-    virtual void mutate(const double ratio, const size_t start, const size_t end) = 0;
+    virtual void kill_and_reproduce(const index_t kill_start, const index_t kill_end, const index_t repr_start, const index_t repr_end) = 0;
+    virtual void mutate(const double ratio, const index_t start, const index_t end) = 0;
 
 };
 
