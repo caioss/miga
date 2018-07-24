@@ -4,4 +4,4 @@
 cd build
 cmake ..
 make
-make test
+./all_tests
