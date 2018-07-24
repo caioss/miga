@@ -75,7 +75,7 @@ enable_testing()
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 # Unit Tests
-add_executable(all_tests main.cpp)
+add_executable(all_tests main.cpp ga_tests.cpp)
 # Google test libs
 target_link_libraries(all_tests gtest gtest_main)
 # Miga code
