@@ -4,7 +4,8 @@
 #include "Population.hpp"
 #include <random>
 
-class CPUPopulation : public Population {
+class CPUPopulation : public Population
+{
 public:
 	CPUPopulation();
     ~CPUPopulation();
