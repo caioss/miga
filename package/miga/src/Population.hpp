@@ -4,7 +4,8 @@
 #include "types.h"
 #include <string>
 
-class Population {
+class Population
+{
 public:
     virtual ~Population() {}
     virtual std::string platform() const = 0;
