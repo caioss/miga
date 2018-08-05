@@ -1,3 +1,6 @@
 [submodule "tests/cpp/lib/gtest"]
 	path = tests/cpp/lib/gtest
 	url = https://github.com/google/googletest
+[submodule "package/third-party/cub"]
+	path = package/third-party/cub
+	url = https://github.com/NVlabs/cub.git
