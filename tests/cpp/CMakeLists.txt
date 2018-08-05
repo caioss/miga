@@ -38,7 +38,7 @@ set(MIGA_CUDA_SRC
 )
 
 add_library(miga_lib STATIC ${MIGA_CPP_SRC} ${MIGA_CUDA_SRC})
-include_directories(${MIGA_SRC_DIR})
+include_directories(${MIGA_SRC_DIR} " ../../package/third-party/cub")
 
 # Compiler options
 if(NOT CMAKE_CUDA_FLAGS)
