@@ -8,7 +8,7 @@ global-include *.cu
 global-include *.cuh
 graft third-party
 #recursive-include third-party *
-#include README INSTALL CHANGELOG LICENSE AUTHORS SUMMARY.txt
+include README INSTALL CHANGELOG LICENSE AUTHORS SUMMARY.txt
 include setup.py
 global-exclude *.pyc
 global-exclude *.pyo
