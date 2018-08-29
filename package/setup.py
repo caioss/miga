@@ -82,19 +82,18 @@ if use_cython:
 setup(
     name = "miga",
     version = "0.0.1",
-
-    description = "Python package to solve protein networks based on sequence coevolution.",
+    description = "Python package to optimize mutual information between two multiple sequence alignment.",
     long_description = LONG_DESCRIPTION,
-    url = "no page yet",
+    long_description_content_type = "text/x-rst",
+    url = "https://github.com/caioss/miga",
     author = "Caio S. Souza",
-    author_email = "caiobiounb@gmail.com",
+    author_email = "souzacaiobsb@gmail.com",
     license = "LGPLv3+",
     classifiers=[
         "Development Status :: 3 - Alpha",
 
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
-        "Topic :: Scientific/Engineering :: Chemistry",
 
         "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
         "Programming Language :: Python :: 2.7",
