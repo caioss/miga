@@ -8,6 +8,11 @@ np_index_t = np.int32
 np_data_t = np.float32
 
 cdef class MIGA:
+    """Mutual Information Genetic Algorithm main class.
+
+    This class stores the current state of the genetic algorithm and dispatch its
+    calculations to the selected platform."""
+
     cdef:
         Population *_population
         seq_t _q
@@ -29,6 +34,7 @@ cdef class MIGA:
         del self._population
 
     def __init__(self):
+        """Constructs the object and initialize it to the default state."""
         self.__clear_population()
         self._seq_a = np.empty((0, 0), np_seq_t, "C")
         self._seq_b = np.empty((0, 0), np_seq_t, "C")
@@ -44,6 +50,11 @@ cdef class MIGA:
 
     @property
     def threads(self):
+        """Number of threads to be used by multithreading platforms.
+
+        There must be at least 1 thread. This attribute is innefective when using any
+        GPU platform."""
+
         return self._threads
 
     @threads.setter
@@ -55,6 +66,17 @@ cdef class MIGA:
 
     @property
     def mutation(self):
+        """Genetic algorithm mutation rate.
+
+        This rate indicates the proportion of swaps (based on genome size) that will be
+        applied to each entity between the generations. Mutations are not applied to
+        elite entities. Mutation rate must be a non-zero value.
+
+        See also
+        --------
+        :attr:`genome`
+        :attr:`elite`"""
+
         return self._mutation
 
     @mutation.setter
@@ -66,6 +88,18 @@ cdef class MIGA:
 
     @property
     def death(self):
+        """Genetic algorithm death rate.
+
+        This rate indicates the proportion of entities (based on population size) that
+        will be killed between the generations. Worst fitness entities are killed first.
+        Elite entities never get killed. Death rate must be a value in the range [0, 1).
+
+        See also
+        --------
+        :attr:`pop_size`
+        :attr:`minimize`
+        :attr:`elite`"""
+
         return self._death
 
     @death.setter
@@ -80,6 +114,19 @@ cdef class MIGA:
 
     @property
     def elite(self):
+        """Genetic algorithm elite ratio.
+
+        This ratio indicates the proportion of entities (based on population size) that
+        will never be killed or mutated between generations. Elite ratio must be a value
+        in the range [0, 1).
+
+        See also
+        --------
+        :attr:`pop_size`
+        :attr:`mutation`
+        :attr:`death`
+        :attr:`minimize`"""
+
         return self._elite
 
     @elite.setter
@@ -94,6 +141,18 @@ cdef class MIGA:
 
     @property
     def genome(self):
+        """Population genome.
+
+        Encoded genome for each entity. Each number indicates to which sequence in group
+        B the current index is paired. Genomes are randomly initialized when
+        :attr:`set_msa` is called or when :attr:`pop_size` is increased. When setting
+        genome to another matrix, shape must be preserved.
+
+        See also
+        --------
+        :attr:`pop_size`
+        :func:`set_msa`"""
+
         return self._genome.copy()
 
     @genome.setter
@@ -102,6 +161,17 @@ cdef class MIGA:
 
     @property
     def pop_size(self):
+        """Population size.
+
+        Number of entities used by the genetic algorithm. There must be at least one
+        entity.
+
+        See also
+        --------
+        :attr:`elite`
+        :attr:`death`
+        :attr:`genome`"""
+
         return self._genome.shape[0]
 
     @pop_size.setter
@@ -113,6 +183,27 @@ cdef class MIGA:
             self.__resize(value)
 
     def set_msa(self, seq_a, seq_b):
+        """Set MSA used to do MI calculations.
+
+        Set the MSA that represents the two groups used in the calculation and
+        initialize the genomes of all population to a random state.
+
+        Parameters
+        ----------
+        seq_a : numpy.ndarray
+            First group encoded MSA. All entries must be positive and lower then
+            :attr:`q`.
+        seq_b : numpy.ndarray
+            Second group encoded MSA. All entries must be positive and lower then
+            :attr:`q`.
+
+        See also
+        --------
+        :attr:`genome`
+        :attr:`seq_a`
+        :attr:`seq_b`
+        :attr:`q`"""
+
         if seq_a.shape[0] != seq_b.shape[0]:
             raise ValueError("Number of sequences must be equal on both alignments")
 
@@ -139,18 +230,48 @@ cdef class MIGA:
 
     @property
     def seq_a(self):
+        """Read-only copy of encoded MSA representing the first group.
+
+        See also
+        --------
+        :func:`set_msa`"""
+
         return self._seq_a.T.copy()
 
     @property
     def seq_b(self):
+        """Read-only copy of encoded MSA representing the second group.
+
+        See also
+        --------
+        :func:`set_msa`"""
+
         return self._seq_b.T.copy()
 
     @property
     def fitness(self):
+        """Population fitness
+
+        Read-only copy of of the array containing each entity fitness value. This
+        array is first initialized with zeros.
+
+        See also
+        --------
+        :func:`run`"""
+
         return self._fitness.copy()
 
     @property
     def minimize(self):
+        """Optimization target.
+
+        `True` if the genetic algorithm must minimize the fitness, `False` otherwise.
+
+        See also
+        --------
+        :attr:`fitness`
+        :func:`run`"""
+
         return self._minimize
 
     @minimize.setter
@@ -159,6 +280,17 @@ cdef class MIGA:
 
     @property
     def q(self):
+        """Number of symbols in the MSA.
+
+        Total number of possible symbols used to encode both MSAs. Must be a non-zero
+        value.
+
+        See also
+        --------
+        :attr:`seq_a`
+        :attr:`seq_b`
+        :func:`set_msa`"""
+
         return self._q
 
     @q.setter
@@ -170,6 +302,15 @@ cdef class MIGA:
 
     @property
     def lambda_(self):
+        """Mutual information pseudocounter parameter.
+
+        Parameter used by the pseudocounter in the mutual information calculations.
+
+        See also
+        --------
+        :attr:`q`
+        :func:`run`"""
+
         return self._lambda
 
     @lambda_.setter
@@ -181,6 +322,17 @@ cdef class MIGA:
 
     @property
     def platform(self):
+        """Platform which will be used by the genetic algorithm.
+
+        Platform where the genetic algorithm calculations will run. Possible values are
+        'CPU', 'GPU' and 'SimpleGPU'. Platforms 'GPU' and 'SimpleGPU' will be available
+        only if the package was compiled with CUDA support. Platform 'SimpleGPU' is a
+        non-optimized reference platform to help on writing new platforms for GPU use.
+
+        See also
+        --------
+        :func:`run`"""
+
         return self._population.platform().decode("UTF-8")
 
     @platform.setter
@@ -193,6 +345,8 @@ cdef class MIGA:
         self._population = new_population
 
     def __resize(self, new_size):
+        """Resize the population and initialize or copy genomes if necessary."""
+
         old_size = self._genome.shape[0]
         old_genome = self._genome
         old_fitness = self._fitness
@@ -226,10 +380,14 @@ cdef class MIGA:
         self._fitness = new_fitness
 
     def __clear_population(self):
+        """Empty population-based attributes."""
+
         self._genome = np.empty((0, 0), np_index_t, "C")
         self._fitness = np.empty(0, np_data_t, "C")
 
     def __update_population(self):
+        """Set current state on the platform object."""
+
         self._population.set_q(self._q)
         self._population.set_lambda(self._lambda)
         self._population.set_threads(self._threads)
@@ -254,6 +412,22 @@ cdef class MIGA:
 
 
     def run(self, index_t generations):
+        """Run the genetic algorithm.
+
+        Run the genetic algorithm for `generations` generations with the current state
+        (e.g. population, MSA, platform). In each generation the following steps are
+        repeated:
+
+        1. Entities will be sorted based on their fitness (see :attr:`minimize`).
+        2. Worst fitness entities will be replaced by copies of the remaining entities (see :attr:`death`).
+        3. Non-elite entities genomes will be mutated (see :attr:`elite` and :attr:`mutation`).
+
+        Parameters
+        ----------
+        generations: :type:`int`
+            Number of generations to run the genetic algorithm. If it's 0, population
+            will be sorted based on the calculated fitness values."""
+
         self.__update_population()
 
         # GA parameters
