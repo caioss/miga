@@ -54,6 +54,6 @@ Benchmark
 .. Footnotes
 .. _LICENSE: https://github.com/caioss/miga/blob/master/LICENSE
 .. _release: https://github.com/caioss/miga/releases
-.. _examples: https://github.com/caioss/miga/examples
+.. _examples: https://github.com/caioss/miga/tree/master/examples
 .. _online documentation: https://miga.readthedocs.io
 .. _Issues page: https://github.com/caioss/miga/issues
