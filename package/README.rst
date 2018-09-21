@@ -16,6 +16,10 @@ Contact
 =======
 Please report bugs and feature requests through the `Issues Tracker`_.
 
+Documentation
+=============
+Plese refer to the examples_ folder in the code repository and to `online documentation`_ to learn how to use this package.
+
 Instalation
 ===========
 For installation instructions please refer to the `project page`_.
@@ -23,4 +27,6 @@ For installation instructions please refer to the `project page`_.
 .. Footnotes
 .. _Github: https://github.com/caioss/miga
 .. _Issues Tracker: https://github.com/caioss/miga/issues
+.. _examples: https://github.com/caioss/miga/tree/master/examples
+.. _online documentation: https://miga.readthedocs.io
 .. _project page: https://github.com/caioss/miga/blob/master/README.rst
