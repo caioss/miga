@@ -8,5 +8,5 @@ mkdir $BUILD_DIR
 rsync -avc --delete ../package/ $BUILD_DIR/
 
 cd $BUILD_DIR
-USE_CYTHON=1 python3 setup.py sdist
+python3 setup.py sdist
 cd ..

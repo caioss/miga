@@ -8,26 +8,16 @@ REQUIRED_CYTHON = "0.22"
 
 # Cython detection
 def get_cython():
-    if "USE_CYTHON" in os.environ:
-        try:
-            value = int(os.environ["USE_CYTHON"])
-        except ValueError:
-            return False
+    try:
+        import Cython
+    except ImportError:
+        return False
 
-        if value == 1:
-            try:
-                import Cython
-            except ImportError:
-                return False
+    if LooseVersion(Cython.__version__) < LooseVersion(REQUIRED_CYTHON):
+        print("Cython version mismatch. Version {} is installed but pyvmd needed version {}. Cython won't be used.".format(Cython.__version__, REQUIRED_CYTHON))
+        return False
 
-            if LooseVersion(Cython.__version__) < LooseVersion(REQUIRED_CYTHON):
-                print("Cython version mismatch. Version {} is installed but pyvmd needed version {}. Cython won't be used.".format(Cython.__version__, REQUIRED_CYTHON))
-                return False
-
-            return True
-
-    return False
-
+    return True
 
 # Get readme content
 with open("README.rst") as fd:
