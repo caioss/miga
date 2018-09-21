@@ -13,12 +13,12 @@ Requirements
 * Python version 3+
 * GCC and G++
 * Numpy
-* Cython 0.22+
 
 Optional requirements
 =====================
 * CUDA capable GPU with compute capability >= 3.0
 * CUDA Toolkit version 9+
+* Cython 0.22+
 
 Instalation
 ===========
