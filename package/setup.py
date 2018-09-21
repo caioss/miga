@@ -70,16 +70,21 @@ if use_cython:
 
 setup(
     name = "miga",
-    version = "0.0.1",
+    version = "1.0.0",
     description = "Python package to optimize mutual information between two multiple sequence alignment.",
     long_description = LONG_DESCRIPTION,
     long_description_content_type = "text/x-rst",
     url = "https://github.com/caioss/miga",
+    project_urls={
+        "Documentation": "https://miga.readthedocs.io/",
+        "Source": "https://github.com/caioss/miga/",
+        "Tracker": "https://github.com/caioss/miga/issues/",
+    },
     author = "Caio S. Souza",
-    author_email = "souzacaiobsb@gmail.com",
+    author_email = "caiobiounb@gmail.com",
     license = "LGPLv3+",
-    classifiers=[
-        "Development Status :: 3 - Alpha",
+    classifiers = [
+        "Development Status :: 5 - Production/Stable",
 
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
@@ -88,8 +93,12 @@ setup(
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: C++",
+        "Programming Language :: Cython",
+
+        "Natural Language :: English",
+        "Operating System :: POSIX :: Linux",
     ],
-    keywords = "theory information alignment",
+    keywords = "mutual information, sequence alignment, cuda, GPU, genetic algorithm",
     packages = find_packages(),
     package_dir = {"miga": "miga"},
     ext_package = "miga",
