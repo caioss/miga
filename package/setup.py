@@ -1,5 +1,4 @@
 from cuda_build import CUDABuild
-import os
 import sys
 from distutils.version import LooseVersion
 from setuptools import setup, find_packages, Extension
@@ -35,7 +34,7 @@ cuda_inc = ["third-party/cub"]
 if cuda:
     print("Installing with CUDA")
 
-    if "egg_info" in sys.argv:
+    if "egg_info" in sys.argv or "sdist" in sys.argv:
         cuda_obj = cuda.compile(cuda_src, cuda_inc, True)
     else:
         cuda_obj = cuda.compile(cuda_src, cuda_inc)
