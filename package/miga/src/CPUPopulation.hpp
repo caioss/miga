@@ -15,6 +15,7 @@ public:
     void set_threads(const size_t threads) override;
     void set_msa(const index_t num_seqs, seq_t *seq_a, const index_t ic_a, seq_t *seq_b, const index_t ic_b) override;
     void set_genome(index_t *genome, const index_t pop_size) override;
+    void set_contacts(index_t *contacts, const index_t size) override;
     void set_fitness(data_t *fitness) override;
     void initialize() override;
     void finalize() override;
@@ -28,6 +29,7 @@ private:
     void update_site_probs();
     void site_prob(const index_t num_ic, const seq_t *msa, data_t *site_prob);
     double single_fitness(const index_t index) const;
+    double compute_coupling(const index_t ic_a, const index_t ic_b, uint32_t *pair_count, const index_t *genome, const double residual) const;
 
 private:
 	size_t _num_threads;
@@ -35,11 +37,13 @@ private:
     index_t _num_seqs;
     index_t _num_ic_a;
     index_t _num_ic_b;
+    index_t _contact_size;
     seq_t _q;
     data_t _lambda;
     std::default_random_engine _rng_engine;
     bool *_changed;
     index_t *_genome;
+    index_t *_contacts;
     seq_t *_seq_a;
     seq_t *_seq_b;
     data_t *_fitness;
