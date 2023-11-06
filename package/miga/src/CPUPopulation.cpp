@@ -5,7 +5,8 @@
 typedef std::uniform_int_distribution<index_t> rng_distrib_t;
 
 CPUPopulation::CPUPopulation()
-: _changed { nullptr },
+: _contact_size { 0 },
+  _changed { nullptr },
   _site_prob_a { nullptr },
   _site_prob_b { nullptr }
 {
@@ -50,6 +51,12 @@ void CPUPopulation::set_genome(index_t *genome, const index_t pop_size)
 {
     _pop_size = pop_size;
     _genome = genome;
+}
+
+void CPUPopulation::set_contacts(index_t *contacts, const index_t size)
+{
+    _contact_size = size;
+    _contacts = contacts;
 }
 
 void CPUPopulation::set_fitness(data_t *fitness)
@@ -118,8 +125,8 @@ void CPUPopulation::sort(const bool minimize)
 
 void CPUPopulation::site_prob(const index_t num_ic, const seq_t *msa, data_t *site_prob)
 {
-    const data_t residual { _lambda / (_lambda * _q + _num_seqs * _q) };
-    const data_t scale { data_t(1.0) / (_lambda + _num_seqs) };
+    const data_t residual { _lambda / _q };
+    const data_t scale { data_t(1.0) - _lambda };
 
     std::fill(site_prob, site_prob + num_ic * _q, 0.0);
 
@@ -131,13 +138,13 @@ void CPUPopulation::site_prob(const index_t num_ic, const seq_t *msa, data_t *si
             ++site_prob[ic * _q + aa];
         }
     }
+    
     for (index_t ic = 0; ic < num_ic; ++ic)
     {
         for (index_t aa = 0; aa < _q; ++aa)
         {
             const index_t index { ic * _q + aa };
-            site_prob[index] *= scale;
-            site_prob[index] += residual;
+            site_prob[index] = scale * (site_prob[index] / _num_seqs) + residual;
         }
     }
 }
@@ -223,33 +230,52 @@ double CPUPopulation::single_fitness(const index_t index) const
     double coupling { 0 };
     uint32_t *pair_count { new uint32_t[_q * _q] };
     const index_t *genome { _genome + index * _num_seqs };
+    const data_t residual { _lambda / (_q * _q) };
 
-    const double residual { _lambda / (_lambda * _q * _q + _num_seqs * _q * _q) };
-
-    for (index_t ic_a = 0; ic_a < _num_ic_a; ++ic_a)
+    if (_contact_size > 0)
     {
-        for (index_t ic_b = 0; ic_b < _num_ic_b; ++ic_b)
+        for (index_t c_index = 0; c_index < _contact_size; ++c_index)
         {
-            std::fill(pair_count, pair_count + _q * _q, 0);
-
-            for (index_t seq = 0; seq < _num_seqs; ++seq)
+            index_t ic_a { _contacts[c_index * 2] };
+            index_t ic_b { _contacts[c_index * 2 + 1] };
+            coupling += compute_coupling(ic_a, ic_b, pair_count, genome, residual);
+        }
+    }
+    else
+    {
+        for (index_t ic_a = 0; ic_a < _num_ic_a; ++ic_a)
+        {
+            for (index_t ic_b = 0; ic_b < _num_ic_b; ++ic_b)
             {
-                const seq_t aa1 { _seq_a[ic_a * _num_seqs + seq] };
-                const seq_t aa2 { _seq_b[ic_b * _num_seqs + genome[seq]] };
-                ++pair_count[aa1 * _q + aa2];
+                coupling += compute_coupling(ic_a, ic_b, pair_count, genome, residual);
             }
+        }
+    }
 
-            for (index_t aa1 = 0; aa1 < _q; ++aa1)
-            {
-                for (index_t aa2 = 0; aa2 < _q; ++aa2)
-                {
-                    const double pair_prob { residual + pair_count[aa1 * _q + aa2] / (_num_seqs + _lambda) };
-                    const double aa1_prob { _site_prob_a[ic_a * _q + aa1] };
-                    const double aa2_prob { _site_prob_b[ic_b * _q + aa2] };
+    return coupling;
+}
 
-                    coupling += pair_prob * log(pair_prob / (aa1_prob * aa2_prob));
-                }
-            }
+double CPUPopulation::compute_coupling(const index_t ic_a, const index_t ic_b, uint32_t *pair_count, const index_t *genome, const double residual) const
+{
+    double coupling { 0 };
+    std::fill(pair_count, pair_count + _q * _q, 0);
+
+    for (index_t seq = 0; seq < _num_seqs; ++seq)
+    {
+        const seq_t aa1 { _seq_a[ic_a * _num_seqs + seq] };
+        const seq_t aa2 { _seq_b[ic_b * _num_seqs + genome[seq]] };
+        ++pair_count[aa1 * _q + aa2];
+    }
+
+    for (index_t aa1 = 0; aa1 < _q; ++aa1)
+    {
+        for (index_t aa2 = 0; aa2 < _q; ++aa2)
+        {
+            const double pair_prob = (data_t(1.0) - _lambda) * pair_count[aa1 * _q + aa2] / _num_seqs + residual;
+            const double aa1_prob { _site_prob_a[ic_a * _q + aa1] };
+            const double aa2_prob { _site_prob_b[ic_b * _q + aa2] };
+
+            coupling += pair_prob * log(pair_prob / (aa1_prob * aa2_prob));
         }
     }
 

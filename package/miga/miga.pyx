@@ -26,6 +26,7 @@ cdef class MIGA:
         object _fitness
         object _seq_a
         object _seq_b
+        object _contacts
 
     def __cinit__(self):
         self._population = make_population("CPU")
@@ -38,6 +39,7 @@ cdef class MIGA:
         self.__clear_population()
         self._seq_a = np.empty((0, 0), np_seq_t, "C")
         self._seq_b = np.empty((0, 0), np_seq_t, "C")
+        self._contacts = np.empty((0, 2), np_index_t, "C")
 
         self.pop_size = 20
         self.mutation = 0.01
@@ -158,6 +160,21 @@ cdef class MIGA:
     @genome.setter
     def genome(self, value):
         self._genome[:] = value
+
+    @property
+    def contacts(self):
+        # TODO
+        # TODO documentation
+        # TODO
+        return self._contacts.copy()
+
+    @contacts.setter
+    def contacts(self, contacts):
+        self._contacts = np.require(
+            contacts.copy(),
+            np_index_t,
+            ("C", "W", "O")
+        )
 
     @property
     def pop_size(self):
@@ -388,6 +405,9 @@ cdef class MIGA:
     def __update_population(self):
         """Set current state on the platform object."""
 
+        # TODO
+        # TODO sanity check of the contacts contents
+        # TODO
         self._population.set_q(self._q)
         self._population.set_lambda(self._lambda)
         self._population.set_threads(self._threads)
@@ -406,6 +426,16 @@ cdef class MIGA:
         cdef index_t pop_size = self.pop_size
         cdef index_t[:, :] genome = self._genome
         self._population.set_genome(&genome[0, 0], pop_size)
+
+        # TODO
+        # TODO reorder contacts for better cache coherency
+        # TODO
+        cdef index_t n_contacts = self._contacts.shape[0]
+        cdef index_t[:, :] contacts = self._contacts
+        if n_contacts:
+            self._population.set_contacts(&contacts[0, 0], n_contacts)
+        else:
+            self._population.set_contacts(NULL, n_contacts)
 
         cdef data_t[:] fitness = self._fitness
         self._population.set_fitness(&fitness[0])
